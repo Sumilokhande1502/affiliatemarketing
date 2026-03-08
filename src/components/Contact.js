@@ -4,9 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Send, Loader2, Mail, MapPin, Phone } from "lucide-react";
-import axios from "axios";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/xlgwqajy";
 
 export default function Contact() {
   const [formData, setFormData] = useState({ name: "", email: "", subject: "", message: "" });
@@ -22,13 +21,34 @@ export default function Contact() {
     }
     setIsSubmitting(true);
     try {
-      const response = await axios.post("https://formspree.io/f/xlgwqajy", JSON.stringify(formData));
-      toast.success(response.data.message);
+      const response = await fetch(FORMSPREE_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        let errorMessage = "Something went wrong. Please try again.";
+        try {
+          const payload = await response.json();
+          if (payload?.errors?.[0]?.message) {
+            errorMessage = payload.errors[0].message;
+          } else if (payload?.error) {
+            errorMessage = payload.error;
+          }
+        } catch (_) {
+          // Keep default error message when response body is not JSON.
+        }
+        throw new Error(errorMessage);
+      }
+
+      toast.success("Thanks! Your message has been sent.");
       setFormData({ name: "", email: "", subject: "", message: "" });
     } catch (error) {
-      toast.error(
-        error.response?.data?.detail || "Something went wrong. Please try again."
-      );
+      toast.error(error instanceof Error ? error.message : "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
