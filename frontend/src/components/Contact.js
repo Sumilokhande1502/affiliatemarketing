@@ -5,7 +5,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Send, Loader2, Mail, MapPin, Phone } from "lucide-react";
-import axios from "axios";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 
@@ -33,13 +32,44 @@ export default function Contact() {
     setIsSubmitting(true);
 
     try {
-      const response = await axios.post(`${BACKEND_URL}/api/contact`, formData);
-      toast.success(response.data.message);
+      // Try backend API first (works on Emergent), fall back to Formspree/mailto
+      if (BACKEND_URL) {
+        const response = await fetch(`${BACKEND_URL}/api/contact`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        });
+        const data = await response.json();
+        toast.success(data.message || "Message sent successfully!");
+      } else {
+        // Formspree integration — replace YOUR_FORM_ID with your Formspree form ID
+        const FORMSPREE_ID = process.env.REACT_APP_FORMSPREE_ID || "";
+        if (FORMSPREE_ID) {
+          const response = await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify({
+              name: formData.name,
+              email: formData.email,
+              _subject: formData.subject,
+              message: formData.message,
+            }),
+          });
+          if (response.ok) {
+            toast.success("Message sent successfully! We'll get back to you soon.");
+          } else {
+            throw new Error("Form submission failed");
+          }
+        } else {
+          // Fallback: mailto link
+          const mailtoLink = `mailto:hello@affiliatehub.com?subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\n\n${formData.message}`)}`;
+          window.open(mailtoLink, "_blank");
+          toast.success("Opening your email client...");
+        }
+      }
       setFormData({ name: "", email: "", subject: "", message: "" });
     } catch (error) {
-      toast.error(
-        error.response?.data?.detail || "Something went wrong. Please try again."
-      );
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
