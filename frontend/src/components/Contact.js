@@ -22,7 +22,7 @@ export default function Contact() {
     }
     setIsSubmitting(true);
     try {
-      const response = await axios.post(`${BACKEND_URL}/api/contact`, formData);
+      const response = await axios.post("https://formspree.io/f/xlgwqajy", JSON.stringify(formData));
       toast.success(response.data.message);
       setFormData({ name: "", email: "", subject: "", message: "" });
     } catch (error) {
