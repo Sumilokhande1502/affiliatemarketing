@@ -39,10 +39,10 @@ class ContactMessage(BaseModel):
     timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class ContactRequest(BaseModel):
-    name: str
-    email: str
-    subject: str
-    message: str
+    name: str = Field(..., min_length=1)
+    email: EmailStr
+    subject: str = Field(..., min_length=1)
+    message: str = Field(..., min_length=1)
 
 class ContactResponse(BaseModel):
     status: str
