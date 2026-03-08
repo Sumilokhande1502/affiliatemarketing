@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List
@@ -6,27 +6,38 @@ import os
 import uuid
 import logging
 from datetime import datetime, timezone
-from pymongo import MongoClient
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
-
-# MongoDB connection (pymongo sync for serverless)
-mongo_url = os.environ.get('MONGO_URL', '')
-db_name = os.environ.get('DB_NAME', 'test_database')
-
-client = MongoClient(mongo_url) if mongo_url else None
-db = client[db_name] if client else None
-
-# SendGrid config
-SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY', '')
-SENDER_EMAIL = os.environ.get('SENDER_EMAIL', '')
-RECIPIENT_EMAIL = os.environ.get('RECIPIENT_EMAIL', '')
-
-app = FastAPI()
-api_router = APIRouter(prefix="/api")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Lazy MongoDB connection
+_db = None
+
+def get_db():
+    global _db
+    if _db is None:
+        mongo_url = os.environ.get('MONGO_URL', '')
+        if mongo_url:
+            try:
+                from pymongo import MongoClient
+                client = MongoClient(mongo_url, serverSelectionTimeoutMS=5000)
+                _db = client[os.environ.get('DB_NAME', 'test_database')]
+            except Exception as e:
+                logger.error(f"MongoDB connection failed: {e}")
+                _db = False
+        else:
+            _db = False
+    return _db if _db else None
 
 # Models
 class ContactMessage(BaseModel):
@@ -48,9 +59,18 @@ class ContactResponse(BaseModel):
     status: str
     message: str
 
-# Email sending function
 def send_contact_email(name: str, email: str, subject: str, message: str):
     try:
+        from sendgrid import SendGridAPIClient
+        from sendgrid.helpers.mail import Mail
+
+        api_key = os.environ.get('SENDGRID_API_KEY', '')
+        sender = os.environ.get('SENDER_EMAIL', '')
+        recipient = os.environ.get('RECIPIENT_EMAIL', '')
+
+        if not all([api_key, sender, recipient]):
+            return False
+
         html_content = f"""
         <html>
         <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -66,36 +86,29 @@ def send_contact_email(name: str, email: str, subject: str, message: str):
                     <p>{message}</p>
                 </div>
             </div>
-            <div style="padding: 10px; text-align: center; color: #71717A; font-size: 12px;">
-                <p>Sent from your marketing website contact form</p>
-            </div>
         </body>
         </html>
         """
-        mail = Mail(
-            from_email=SENDER_EMAIL,
-            to_emails=RECIPIENT_EMAIL,
-            subject=f"Contact Form: {subject}",
-            html_content=html_content
-        )
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        mail = Mail(from_email=sender, to_emails=recipient,
+                    subject=f"Contact Form: {subject}", html_content=html_content)
+        sg = SendGridAPIClient(api_key)
         response = sg.send(mail)
-        logger.info(f"Email sent. Status: {response.status_code}")
         return response.status_code == 202
     except Exception as e:
-        logger.error(f"Failed to send email: {str(e)}")
+        logger.error(f"Email failed: {e}")
         return False
 
-# Routes
-@api_router.get("/")
+# Routes — NO /api prefix (Vercel file-based routing already provides /api)
+@app.get("/api")
+@app.get("/api/")
 async def root():
     return {"message": "Affiliate Marketing API"}
 
-@api_router.get("/health")
+@app.get("/api/health")
 async def health_check():
     return {"status": "healthy", "service": "affiliate-marketing-api"}
 
-@api_router.post("/contact", response_model=ContactResponse)
+@app.post("/api/contact", response_model=ContactResponse)
 async def submit_contact(request: ContactRequest):
     contact = ContactMessage(
         name=request.name,
@@ -105,42 +118,29 @@ async def submit_contact(request: ContactRequest):
     )
 
     doc = contact.model_dump()
-
-    # Store in MongoDB if available
+    db = get_db()
     if db is not None:
-        db.contacts.insert_one(doc)
+        try:
+            db.contacts.insert_one(doc)
+        except Exception as e:
+            logger.error(f"MongoDB insert failed: {e}")
 
-    # Send email
-    if SENDGRID_API_KEY and SENDER_EMAIL and RECIPIENT_EMAIL:
-        send_contact_email(
-            request.name,
-            request.email,
-            request.subject,
-            request.message
-        )
-        return ContactResponse(
-            status="success",
-            message="Message sent successfully! We'll get back to you soon."
-        )
-    else:
-        return ContactResponse(
-            status="success",
-            message="Message received! We'll get back to you soon."
-        )
+    email_sent = send_contact_email(request.name, request.email, request.subject, request.message)
 
-@api_router.get("/contacts", response_model=List[ContactMessage])
+    return ContactResponse(
+        status="success",
+        message="Message sent successfully! We'll get back to you soon." if email_sent
+        else "Message received! We'll get back to you soon."
+    )
+
+@app.get("/api/contacts", response_model=List[ContactMessage])
 async def get_contacts():
+    db = get_db()
     if db is None:
         return []
-    contacts = list(db.contacts.find({}, {"_id": 0}).limit(100))
-    return contacts
-
-app.include_router(api_router)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    try:
+        contacts = list(db.contacts.find({}, {"_id": 0}).limit(100))
+        return contacts
+    except Exception as e:
+        logger.error(f"MongoDB query failed: {e}")
+        return []
