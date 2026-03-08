@@ -5,7 +5,7 @@
   "installCommand": "cd frontend && yarn install",
   "functions": {
     "api/**/*.py": {
-      "runtime": "@vercel/python@3.0.5",
+      "runtime": "@vercel/python@6.20.2",
       "memory": 1024,
       "maxDuration": 30
     }
