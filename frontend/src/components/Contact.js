@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Send, Loader2, Mail, MapPin, Phone } from "lucide-react";
+import axios from "axios";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 
@@ -21,24 +22,16 @@ export default function Contact() {
     }
     setIsSubmitting(true);
     try {
-      if (BACKEND_URL) {
-        const response = await fetch(`${BACKEND_URL}/api/contact`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData) });
-        const data = await response.json();
-        toast.success(data.message || "Message sent!");
-      } else {
-        const FORMSPREE_ID = process.env.REACT_APP_FORMSPREE_ID || "";
-        if (FORMSPREE_ID) {
-          const response = await fetch(`https://formspree.io/f/${FORMSPREE_ID}`, { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ name: formData.name, email: formData.email, _subject: formData.subject, message: formData.message }) });
-          if (response.ok) toast.success("Message sent! We'll get back to you within 24h.");
-          else throw new Error("Failed");
-        } else {
-          window.open(`mailto:hello@creativeaffiliates.in?subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\n\n${formData.message}`)}`, "_blank");
-          toast.success("Opening your email client...");
-        }
-      }
+      const response = await axios.post(`${BACKEND_URL}/api/contact`, formData);
+      toast.success(response.data.message);
       setFormData({ name: "", email: "", subject: "", message: "" });
-    } catch { toast.error("Something went wrong. Please try again."); }
-    finally { setIsSubmitting(false); }
+    } catch (error) {
+      toast.error(
+        error.response?.data?.detail || "Something went wrong. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
