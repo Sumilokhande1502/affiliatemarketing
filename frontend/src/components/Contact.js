@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Send, Loader2, Mail, MapPin, Phone } from "lucide-react";
+import axios from "axios";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 
@@ -21,6 +22,7 @@ export default function Contact() {
     }
     setIsSubmitting(true);
     try {
+<<<<<<< HEAD
       if (BACKEND_URL) {
         const response = await fetch(`${BACKEND_URL}/api/contact`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData) });
         const data = await response.json();
@@ -39,6 +41,18 @@ export default function Contact() {
       setFormData({ name: "", email: "", subject: "", message: "" });
     } catch { toast.error("Something went wrong. Please try again."); }
     finally { setIsSubmitting(false); }
+=======
+      const response = await axios.post(`${BACKEND_URL}/api/contact`, formData);
+      toast.success(response.data.message);
+      setFormData({ name: "", email: "", subject: "", message: "" });
+    } catch (error) {
+      toast.error(
+        error.response?.data?.detail || "Something went wrong. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+>>>>>>> parent of f3b4282 (auto-commit for 653d0d2e-4e0e-4f81-b3af-4f1a542885db)
   };
 
   return (
