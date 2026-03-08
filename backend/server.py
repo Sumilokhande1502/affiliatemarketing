@@ -1,15 +1,16 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from typing import List, Optional
 import uuid
 from datetime import datetime, timezone
-
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -19,54 +20,118 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app without a prefix
-app = FastAPI()
+# SendGrid config
+SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY', '')
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL', '')
+RECIPIENT_EMAIL = os.environ.get('RECIPIENT_EMAIL', '')
 
-# Create a router with the /api prefix
+app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
-
-# Define Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
-    
+# Models
+class ContactMessage(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    name: str
+    email: str
+    subject: str
+    message: str
+    timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
-class StatusCheckCreate(BaseModel):
-    client_name: str
+class ContactRequest(BaseModel):
+    name: str
+    email: str
+    subject: str
+    message: str
 
-# Add your routes to the router instead of directly to app
+class ContactResponse(BaseModel):
+    status: str
+    message: str
+
+# Email sending function
+def send_contact_email(name: str, email: str, subject: str, message: str):
+    try:
+        html_content = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: #050505; color: #D4FF00; padding: 20px; text-align: center;">
+                <h1 style="margin: 0;">New Contact Form Submission</h1>
+            </div>
+            <div style="padding: 20px; background: #f4f4f5;">
+                <p><strong>Name:</strong> {name}</p>
+                <p><strong>Email:</strong> {email}</p>
+                <p><strong>Subject:</strong> {subject}</p>
+                <div style="background: white; padding: 15px; border-left: 4px solid #D4FF00; margin-top: 10px;">
+                    <p><strong>Message:</strong></p>
+                    <p>{message}</p>
+                </div>
+            </div>
+            <div style="padding: 10px; text-align: center; color: #71717A; font-size: 12px;">
+                <p>Sent from your marketing website contact form</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        mail = Mail(
+            from_email=SENDER_EMAIL,
+            to_emails=RECIPIENT_EMAIL,
+            subject=f"Contact Form: {subject}",
+            html_content=html_content
+        )
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(mail)
+        logger.info(f"Email sent. Status: {response.status_code}")
+        return response.status_code == 202
+    except Exception as e:
+        logger.error(f"Failed to send email: {str(e)}")
+        return False
+
+# Routes
 @api_router.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Affiliate Marketing API"}
 
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
-    
-    # Convert to dict and serialize datetime to ISO string for MongoDB
-    doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
-    
-    _ = await db.status_checks.insert_one(doc)
-    return status_obj
+@api_router.get("/health")
+async def health_check():
+    return {"status": "healthy", "service": "affiliate-marketing-api"}
 
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    # Exclude MongoDB's _id field from the query results
-    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
-    
-    # Convert ISO string timestamps back to datetime objects
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
-    
-    return status_checks
+@api_router.post("/contact", response_model=ContactResponse)
+async def submit_contact(request: ContactRequest, background_tasks: BackgroundTasks):
+    contact = ContactMessage(
+        name=request.name,
+        email=request.email,
+        subject=request.subject,
+        message=request.message
+    )
 
-# Include the router in the main app
+    doc = contact.model_dump()
+    await db.contacts.insert_one(doc)
+
+    # Send email in background
+    if SENDGRID_API_KEY and SENDER_EMAIL and RECIPIENT_EMAIL:
+        background_tasks.add_task(
+            send_contact_email,
+            request.name,
+            request.email,
+            request.subject,
+            request.message
+        )
+        return ContactResponse(
+            status="success",
+            message="Message sent successfully! We'll get back to you soon."
+        )
+    else:
+        return ContactResponse(
+            status="success",
+            message="Message received! We'll get back to you soon."
+        )
+
+@api_router.get("/contacts", response_model=List[ContactMessage])
+async def get_contacts():
+    contacts = await db.contacts.find({}, {"_id": 0}).to_list(100)
+    return contacts
+
 app.include_router(api_router)
 
 app.add_middleware(
@@ -77,7 +142,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'

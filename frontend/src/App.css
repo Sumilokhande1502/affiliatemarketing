@@ -1,34 +1,143 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* Entrance animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-.App-link {
-    color: #61dafb;
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.7s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animate-slide-left {
+  animation: slideInLeft 0.7s ease-out forwards;
+}
+
+.animate-slide-right {
+  animation: slideInRight 0.7s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.5s ease-out forwards;
+}
+
+/* Stagger delays */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-600 { animation-delay: 600ms; }
+.delay-700 { animation-delay: 700ms; }
+.delay-800 { animation-delay: 800ms; }
+
+/* Noise overlay */
+.noise-overlay::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Card glare on hover */
+.card-glare {
+  position: relative;
+  overflow: hidden;
+}
+.card-glare::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    to bottom right,
+    transparent 40%,
+    rgba(212, 255, 0, 0.04) 50%,
+    transparent 60%
+  );
+  transform: rotate(-45deg) translateY(-100%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+.card-glare:hover::after {
+  transform: rotate(-45deg) translateY(0);
+}
+
+/* Hero glow */
+.hero-glow {
+  background: radial-gradient(circle at 30% 50%, rgba(212, 255, 0, 0.08) 0%, transparent 60%);
+}
+
+.dark .hero-glow {
+  background: radial-gradient(circle at 30% 50%, rgba(212, 255, 0, 0.06) 0%, transparent 60%);
+}
+
+/* Input underline style */
+.input-underline {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid hsl(var(--border));
+  border-radius: 0;
+  padding: 0.75rem 0;
+  transition: border-color 0.3s ease;
+}
+.input-underline:focus {
+  border-bottom-color: hsl(var(--primary));
+  outline: none;
+  box-shadow: none;
 }
