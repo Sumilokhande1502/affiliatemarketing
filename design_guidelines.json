@@ -1,0 +1,154 @@
+{
+  "design_system": {
+    "identity": {
+      "name": "E1_AFFILIATE_MARKETING",
+      "archetype": "The Performance Pro (Archetype 2) x Swiss High-Contrast",
+      "vibe": "Aggressive Growth, Precision, Wealth, Tech-Forward",
+      "emotion": "Confidence, Urgency, Elite Status"
+    },
+    "typography": {
+      "headings": {
+        "family": "Oswald, sans-serif",
+        "usage": "Use for all H1-H3. Transform uppercase for H1. Tracking tight (-0.02em).",
+        "weights": ["500", "700"]
+      },
+      "body": {
+        "family": "Inter, sans-serif",
+        "usage": "Use for paragraphs, UI text. High legibility.",
+        "weights": ["400", "500"]
+      },
+      "mono": {
+        "family": "JetBrains Mono, monospace",
+        "usage": "Use for stats, pricing numbers, and small labels/tags."
+      },
+      "scale": {
+        "h1": "text-6xl md:text-8xl font-bold tracking-tighter uppercase",
+        "h2": "text-4xl md:text-5xl font-semibold tracking-tight",
+        "h3": "text-2xl md:text-3xl font-medium",
+        "p": "text-base md:text-lg leading-relaxed text-muted-foreground",
+        "label": "text-xs font-mono uppercase tracking-widest text-muted-foreground"
+      }
+    },
+    "colors": {
+      "light": {
+        "background": "#F4F4F5",
+        "foreground": "#09090B",
+        "card": "#FFFFFF",
+        "card_foreground": "#09090B",
+        "popover": "#FFFFFF",
+        "popover_foreground": "#09090B",
+        "primary": "#000000",
+        "primary_foreground": "#D4FF00",
+        "secondary": "#E4E4E7",
+        "secondary_foreground": "#18181B",
+        "muted": "#F4F4F5",
+        "muted_foreground": "#71717A",
+        "accent": "#F4F4F5",
+        "accent_foreground": "#18181B",
+        "destructive": "#EF4444",
+        "destructive_foreground": "#FAFAFA",
+        "border": "#E4E4E7",
+        "input": "#E4E4E7",
+        "ring": "#09090B"
+      },
+      "dark": {
+        "background": "#050505",
+        "foreground": "#FAFAFA",
+        "card": "#0A0A0A",
+        "card_foreground": "#FAFAFA",
+        "popover": "#0A0A0A",
+        "popover_foreground": "#FAFAFA",
+        "primary": "#D4FF00",
+        "primary_foreground": "#000000",
+        "secondary": "#27272A",
+        "secondary_foreground": "#FAFAFA",
+        "muted": "#27272A",
+        "muted_foreground": "#A1A1AA",
+        "accent": "#27272A",
+        "accent_foreground": "#FAFAFA",
+        "destructive": "#7F1D1D",
+        "destructive_foreground": "#FAFAFA",
+        "border": "#27272A",
+        "input": "#27272A",
+        "ring": "#D4FF00"
+      },
+      "palettes": {
+        "primary_accent": "#D4FF00",
+        "secondary_accent": "#6E56CF",
+        "neutral_surface": "#121212"
+      }
+    },
+    "layout": {
+      "spacing_scale": {
+        "container_padding": "p-6 md:p-12",
+        "section_gap": "gap-20 md:gap-32",
+        "element_gap": "gap-6"
+      },
+      "grid_systems": {
+        "bento_marketing": "grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[minmax(300px,auto)]",
+        "hero_split": "grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[80vh]"
+      },
+      "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+    },
+    "components": {
+      "buttons": {
+        "primary": "bg-primary text-primary-foreground hover:bg-primary/90 rounded-none h-12 px-8 uppercase font-bold tracking-widest text-sm hover:-translate-y-1 transition-transform border-2 border-transparent",
+        "secondary": "bg-transparent border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-none h-12 px-8 uppercase font-bold tracking-widest text-sm transition-colors",
+        "ghost": "hover:bg-accent hover:text-accent-foreground"
+      },
+      "cards": {
+        "style": "bg-card border border-border/50 rounded-none hover:border-primary/50 transition-colors duration-300 group relative overflow-hidden",
+        "effect": "Add a 'glare' effect on hover using pseudo-elements"
+      },
+      "inputs": {
+        "style": "bg-background border-b-2 border-border focus:border-primary rounded-none px-0 py-4 focus:ring-0 transition-colors font-mono placeholder:text-muted-foreground/50"
+      }
+    },
+    "motion": {
+      "micro_interactions": {
+        "hover_lift": "hover:-translate-y-1 transition-transform duration-200",
+        "button_press": "active:scale-95",
+        "focus_ring": "focus:ring-2 focus:ring-primary focus:ring-offset-2"
+      },
+      "page_transitions": {
+        "entrance": "animate-in fade-in slide-in-from-bottom-4 duration-700"
+      }
+    },
+    "visual_enhancers": {
+      "glassmorphism": "backdrop-blur-xl bg-background/60 border border-white/10",
+      "noise_texture": "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E\")",
+      "gradients": {
+        "hero_glow": "bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/20 via-background to-background"
+      }
+    },
+    "assets": {
+      "images": {
+        "hero_bg": "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=1974&auto=format&fit=crop",
+        "about_bg": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop"
+      },
+      "icons": "Lucide React (default)"
+    },
+    "universal_guidelines": {
+      "do_not_use": [
+        "Rounded corners > 8px (Aim for sharp or 4px)",
+        "Gradient text on dark backgrounds (Legibility issues)",
+        "Default Shadcn Card styles (Too generic)"
+      ],
+      "must_do": [
+        "Use generous padding (py-20 for sections)",
+        "Ensure text contrast > 4.5:1",
+        "Add hover states to ALL interactive elements"
+      ]
+    }
+  },
+  "implementation_steps": [
+    "1. Setup ThemeProvider for Dark/Light mode toggle.",
+    "2. Configure Tailwind with 'Oswald' and 'Inter' fonts and the 'Acid Green' color palette.",
+    "3. Build the 'NoiseOverlay' component to apply the grain texture globally.",
+    "4. Create the 'Hero' section with the split layout and bold typography.",
+    "5. Build 'ProductCard' components using the 'Bento' grid layout.",
+    "6. Implement 'ContactForm' using Shadcn Form + SendGrid logic.",
+    "7. Assemble the Landing Page.",
+    "8. Add framer-motion entrance animations."
+  ]
+}
